@@ -34,6 +34,7 @@ function initiateSepaDebit() {
             + createDashboardLink(response.object, response.livemode, response.id)
             +" for customer "
             + createDashboardLink('customer', response.livemode, response.customer)
+            +'. View your SEPA mandate <a href="'+response.source.sepa_debit.mandate_url+'" target="_blank">here</a>.'
           );
           toggleResult();
         }
@@ -48,6 +49,7 @@ function initiateSepaDebit() {
 function initiateSofort() {
   console.log("SOFORT");
   console.log($("#sofort_country").val());
+  toggleResult();
   // Create SOFORT source
   $.post(
         tonicURL,
@@ -88,6 +90,7 @@ $(document).ready(function() {
   Stripe.setPublishableKey(STRIPE_PK);
   var sourceId = getParams('source');
   if (sourceId) {
+    toggleResult();
     $.get(tonicURL+sourceId,
       function(res){
         console.log(res);
@@ -100,7 +103,21 @@ $(document).ready(function() {
             // Check is source has been consumed
             if (source.status == 'consumed') {
               console.log(source);
+              $("#result").html(
+                "Successfully collected "
+                +(source.amount/100)
+                +source.currency.toUpperCase()
+                +" from "
+                +source.owner.verified_name
+                +"'s "+source[source.type].bank_name
+                +" account using "
+                +source.type+"."
+              );
+              toggleResult();
+
               Stripe.source.cancelPoll();
+            } else if (source.status == 'failed') {
+              // TODO show failed message and prompt to retry
             }
         });
     });
