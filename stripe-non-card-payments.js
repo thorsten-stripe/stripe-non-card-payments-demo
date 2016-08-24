@@ -115,7 +115,7 @@ $(document).ready(function() {
               );
               toggleResult();
 
-              Stripe.source.cancelPoll();
+              Stripe.source.cancelPoll(res.id);
             } else if (source.status == 'failed') {
               // TODO show failed message and prompt to retry
             }
