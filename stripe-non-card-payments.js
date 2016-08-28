@@ -1,6 +1,8 @@
 var STRIPE_PK = 'pk_test_IR0lZ3Ot5IQnsde6xuAmkHvB';
 var tonicURL = "https://tonicdev.io/thor-stripe/stripe-non-card-payments-demo/branches/master/sources/";
 
+// TODO: refactor redundant code
+
 // Create SEPA source: ___
 function initiateSepaDebit() {
   console.log("SEPA DEBIT");
@@ -64,17 +66,46 @@ function initiateSofort() {
           // Redirect to SOFORT
           window.location.replace(response.redirect.url);
         }
-);
+  );
 }
 
 // Create iDeal source: ____
 function initiateIdeal() {
   console.log("iDEAL");
+  // TODO iDeal Bank selection
+  // Create iDeal source
+  $.post(
+        tonicURL,
+        {
+          type: "ideal",
+          amount: $("#amount").val(),
+          owner_name: $("#owner_name").val()
+        },
+        function(response) {
+          console.log(response);
+          // Redirect to SOFORT
+          window.location.replace(response.redirect.url);
+        }
+  );
 }
 
 // Create Bancontact source: ____
 function initiateBancontact() {
   console.log("Bancontact");
+  // Create Bancontact source
+  $.post(
+        tonicURL,
+        {
+          type: "bancontact",
+          amount: $("#amount").val(),
+          owner_name: $("#owner_name").val()
+        },
+        function(response) {
+          console.log(response);
+          // Redirect to SOFORT
+          window.location.replace(response.redirect.url);
+        }
+  );
 }
 
 // Execute this when DOM is loaded
@@ -109,7 +140,7 @@ $(document).ready(function() {
                 +source.currency.toUpperCase()
                 +" from "
                 +source.owner.verified_name
-                +"'s "+source[source.type].bank_name
+                +"'s "+ ((source.type == 'ideal') ? source[source.type].bank : source[source.type].bank_name) // TODO naming?
                 +" account using "
                 +source.type+"."
               );
