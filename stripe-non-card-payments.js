@@ -1,5 +1,5 @@
 var STRIPE_PK = 'pk_test_IR0lZ3Ot5IQnsde6xuAmkHvB';
-var tonicURL = "https://tonicdev.io/thor-stripe/stripe-non-card-payments-demo/branches/master/sources/";
+var tonicURL = "https://runkit.io/thor-stripe/stripe-non-card-payments-demo/branches/master/sources/";
 
 // TODO: refactor redundant code
 
