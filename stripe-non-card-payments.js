@@ -1,111 +1,87 @@
 var STRIPE_PK = 'pk_test_IR0lZ3Ot5IQnsde6xuAmkHvB';
-var tonicURL = "https://runkit.io/thor-stripe/stripe-non-card-payments-demo/branches/master/sources/";
+var tonicURL = "https://runkit.io/thor-stripe/stripe-sources-best-practice/branches/master/sources/";
 
-// TODO: refactor redundant code
-
-// Create SEPA source: ___
+// Create SEPA source: https://stripe.com/docs/sepa-direct-debit
 function initiateSepaDebit() {
   console.log("SEPA DEBIT");
   console.log($("#IBAN").val());
-  toggleResult();
   // Initialize Stripe with your publishable key
   Stripe.setPublishableKey(STRIPE_PK);
   // Create bank account token: __
   Stripe.bankAccount.createToken({
-  account_number: $("#IBAN").val(),
-  currency: "eur", // can only be EUR
-  usage: "source", // important
-  account_holder_name: $("#owner_name").val(),
-  address_line1: $("#address_line1").val(),
-  address_city: $("#city").val(),
-  address_zip: $("#zip").val(),
-}, function(status, token) {
-  if (staus = 200) {
-    // Create SEPA Source on server
-    $.post(
-        tonicURL,
-        {
-          type: "sepa_debit",
-          amount: $("#amount").val(),
-          btok: token.id
-        },
-        function(response) {
-          console.log(response);
-          $("#result").html(
-            "Successfully created charge "
-            + createDashboardLink(response.object, response.livemode, response.id)
-            +" for customer "
-            + createDashboardLink('customer', response.livemode, response.customer)
-            +'. View your SEPA mandate <a href="'+response.source.sepa_debit.mandate_url+'" target="_blank">here</a>.'
-          );
-          toggleResult();
-        }
-);
-  } else {
-    // error creating bank account token
-  }
-});
+    account_number: $("#IBAN").val(),
+    currency: "eur", // can only be EUR
+    usage: "source", // important
+    account_holder_name: $("#owner_name").val(),
+    address_line1: $("#address_line1").val(),
+    address_city: $("#city").val(),
+    address_zip: $("#zip").val(),
+  }, function(status, token) {
+    if (staus = 200) {
+      // Create SEPA Source on server
+      createSource('sepa', token.id);
+    } else {
+      // error creating bank account token
+    }
+  });
 }
 
-// Create SOFORT source: ____
-function initiateSofort() {
-  console.log("SOFORT");
-  console.log($("#sofort_country").val());
+// Create redirect source: ____
+function createSource(sourceType) {
+  console.log(sourceType);
   toggleResult();
-  // Create SOFORT source
-  $.post(
-        tonicURL,
-        {
-          type: "sofort",
-          amount: $("#amount").val(),
-          owner_name: $("#owner_name").val(),
-          sofort_country: $("#sofort_country").val()
-        },
-        function(response) {
-          console.log(response);
-          // Redirect to SOFORT
-          window.location.replace(response.redirect.url);
-        }
-  );
-}
-
-// Create iDeal source: ____
-function initiateIdeal() {
-  console.log("iDEAL");
-  // TODO iDeal Bank selection
-  // Create iDeal source
-  $.post(
-        tonicURL,
-        {
-          type: "ideal",
-          amount: $("#amount").val(),
-          owner_name: $("#owner_name").val()
-        },
-        function(response) {
-          console.log(response);
-          // Redirect to SOFORT
-          window.location.replace(response.redirect.url);
-        }
-  );
-}
-
-// Create Bancontact source: ____
-function initiateBancontact() {
-  console.log("Bancontact");
-  // Create Bancontact source
-  $.post(
-        tonicURL,
-        {
-          type: "bancontact",
-          amount: $("#amount").val(),
-          owner_name: $("#owner_name").val()
-        },
-        function(response) {
-          console.log(response);
-          // Redirect to SOFORT
-          window.location.replace(response.redirect.url);
-        }
-  );
+  // Data required to create sources
+  var sourceData = {
+    sofort: {
+      type: "sofort",
+      amount: $("#amount").val(),
+      owner: { name: $("#owner_name").val() },
+      sofort: { country: $("#sofort_country").val() }
+    },
+    giropay: {
+      type: "giropay",
+      amount: $("#amount").val(),
+      owner: { name: $("#owner_name").val() }
+    },
+    ideal: {
+      type: "ideal",
+      amount: $("#amount").val(),
+      owner: { name: $("#owner_name").val() }
+    },
+    bancontact: {
+      type: "bancontact",
+      amount: $("#amount").val(),
+      owner: { name: $("#owner_name").val() }
+    },
+    sepa: {
+      type: "sepa_debit",
+      amount: $("#amount").val(),
+      token: arguments[1]
+    }
+  }
+  // Create redirect source
+  $.ajax({
+    url: tonicURL,
+    type: "POST",
+    contentType: "application/json; charset=utf-8",
+    data: JSON.stringify(sourceData[sourceType])
+  }).then(function(response){
+    console.log(response);
+    // Redirect if flow requires
+    if (response.flow == 'redirect') {
+      window.location.replace(response.redirect.url);
+    } else if (response.object == 'charge') {
+      // Charge has been made update UI
+      $("#result").html(
+        "Successfully created charge "
+        + createDashboardLink(response.object, response.livemode, response.id)
+        +" for customer "
+        + createDashboardLink('customer', response.livemode, response.customer)
+        +'. View your SEPA mandate <a href="'+response.source.sepa_debit.mandate_url+'" target="_blank">here</a>.'
+      );
+      toggleResult();
+    }
+  });
 }
 
 // Execute this when DOM is loaded
@@ -120,37 +96,35 @@ $(document).ready(function() {
   // Check if customer is returning from payment provider
   Stripe.setPublishableKey(STRIPE_PK);
   var sourceId = getParams('source');
+  var sourceClientSecret = getParams('client_secret');
+
   if (sourceId) {
     toggleResult();
-    $.get(tonicURL+sourceId,
-      function(res){
-        console.log(res);
-        // Poll the source to see if the funds have been successfully collected
-        Stripe.source.poll(
-          res.id,
-          res.client_secret,
-          function(status, source) {
-            console.log(source.status);
-            // Check is source has been consumed
-            if (source.status == 'consumed') {
-              console.log(source);
-              $("#result").html(
-                "Successfully collected "
-                +(source.amount/100)
-                +source.currency.toUpperCase()
-                +" from "
-                +source.owner.verified_name
-                +"'s "+ ((source.type == 'ideal') ? source[source.type].bank : source[source.type].bank_name) // TODO naming?
-                +" account using "
-                +source.type+"."
-              );
-              toggleResult();
+    // Poll the source to see if the funds have been successfully collected
+    Stripe.source.poll(
+      sourceId,
+      sourceClientSecret,
+      function(status, source) {
+        console.log(source.status);
+        // Check is source has been consumed
+        if (source.status == 'consumed') {
+          console.log(source);
+          $("#result").html(
+            "Successfully collected "
+            +(source.amount/100)
+            +source.currency.toUpperCase()
+            +" from "
+            +source.owner.verified_name
+            +"'s "+ ((source.type == 'ideal') ? source[source.type].bank : source[source.type].bank_name) // TODO naming?
+            +" account using "
+            +source.type+"."
+          );
+          toggleResult();
 
-              Stripe.source.cancelPoll(res.id);
-            } else if (source.status == 'failed') {
-              // TODO show failed message and prompt to retry
-            }
-        });
+          Stripe.source.cancelPoll(sourceId);
+        } else if (source.status == 'failed') {
+          // TODO show failed message and prompt to retry
+        }
     });
   }
 });
