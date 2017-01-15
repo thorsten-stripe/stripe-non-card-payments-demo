@@ -1,5 +1,5 @@
 var STRIPE_PK = 'pk_test_IR0lZ3Ot5IQnsde6xuAmkHvB';
-var tonicURL = "https://runkit.io/thor-stripe/stripe-sources-best-practice/branches/master/sources/";
+var tonicURL = "https://runkit.io/thor-stripe/stripe-sources-best-practice/2.0.0/sources/";
 
 // Create SEPA source: https://stripe.com/docs/sepa-direct-debit
 function initiateSepaDebit() {
