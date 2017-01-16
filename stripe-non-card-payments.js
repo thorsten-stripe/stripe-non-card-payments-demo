@@ -1,5 +1,5 @@
 var STRIPE_PK = 'pk_test_IR0lZ3Ot5IQnsde6xuAmkHvB';
-var tonicURL = "https://runkit.io/thor-stripe/stripe-sources-best-practice/2.0.0/sources/";
+var tonicURL = "https://runkit.io/thor-stripe/stripe-sources-best-practice/branches/master/sources/";
 
 // Create SEPA source: https://stripe.com/docs/sepa-direct-debit
 function initiateSepaDebit() {
@@ -70,16 +70,11 @@ function createSource(sourceType) {
     // Redirect if flow requires
     if (response.flow == 'redirect') {
       window.location.replace(response.redirect.url);
-    } else if (response.object == 'charge') {
-      // Charge has been made update UI
-      $("#result").html(
-        "Successfully created charge "
-        + createDashboardLink(response.object, response.livemode, response.id)
-        +" for customer "
-        + createDashboardLink('customer', response.livemode, response.customer)
-        +'. View your SEPA mandate <a href="'+response.source.sepa_debit.mandate_url+'" target="_blank">here</a>.'
-      );
-      toggleResult();
+    } else if (response.status == 'chargeable') {
+      // This means the source was automatically charged on our webhook.
+      // For demo purposes the webhook handler is writing the charge status to the source metadata
+      // In your application you should write the charge status to your databse instead
+      setTimeout(checkChargeStatus, 1500, response);
     }
   });
 }
@@ -105,7 +100,7 @@ $(document).ready(function() {
       sourceId,
       sourceClientSecret,
       function(status, source) {
-        console.log(source.status);
+        console.log(source.metadata.charge_status);
         // Check is source has been consumed
         if (source.status == 'consumed') {
           console.log(source);
@@ -130,6 +125,38 @@ $(document).ready(function() {
 });
 
 // Helpers
+// Check Charge status
+function checkChargeStatus(response) {
+  Stripe.request({
+    url: Stripe.endpoint + "/sources/"+ response.id,
+    data: {
+      key:Stripe.key,
+      client_secret: response.client_secret
+    },
+    method: 'GET',
+    headers: {},
+    success: function(result, status) {
+        if (status != 200) {
+          // TODO show error message
+
+        } else if (result.metadata.charge_status) {
+          var chargeStatus = result.metadata.charge_status;
+          // Charge has been made update UI
+          $("#result").html(
+            "Successfully created a "+ chargeStatus +" charge "
+            //+ createDashboardLink(response.object, response.livemode, response.id)
+            //+" for customer "
+            //+ createDashboardLink('customer', response.livemode, response.customer)
+            +'. View your SEPA mandate <a href="'+result.sepa_debit.mandate_url+'" target="_blank">here</a>.'
+          );
+          toggleResult();
+      } else {
+        setTimeout(checkChargeStatus, 1500, response);
+      }
+    }
+  })
+}
+
 // Assemble link to Stripe Dashboard
 function createDashboardLink(objectType, livemode, id) {
   var dashboardURL = 'https://dashboard.stripe.com/';
