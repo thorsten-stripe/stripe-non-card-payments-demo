@@ -90,6 +90,14 @@ $(document).ready(function() {
 
   // Check if customer is returning from payment provider
   Stripe.setPublishableKey(STRIPE_PK);
+  // TODO Enable Stripe elements
+  //var elements = stripe.elements();
+  // Construct the Stripe Element:
+  //var card = elements.create('card');
+  // Initialize the Element into our HTML `span` element, with id="card":
+  //card.mount('#card');
+
+  // Get source params after redirect
   var sourceId = getParams('source');
   var sourceClientSecret = getParams('client_secret');
 
@@ -139,7 +147,7 @@ function checkChargeStatus(response) {
         if (status != 200) {
           // TODO show error message
 
-        } else if (result.metadata.charge_status) {
+        } else if (!!result.metadata.charge_status) {
           var chargeStatus = result.metadata.charge_status;
           // Charge has been made update UI
           $("#result").html(
