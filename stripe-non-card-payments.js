@@ -65,7 +65,7 @@ function createSource(sourceType) {
   // Create redirect source
   sourceData[sourceType].currency = 'eur';
   sourceData[sourceType].redirect = {
-    return_url: window.location.origin
+    return_url: window.location.href
   };
   Stripe.source.create(sourceData[sourceType], function(status, response){
     console.log(status,response);
