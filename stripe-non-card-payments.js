@@ -1,4 +1,5 @@
-var STRIPE_PK = 'pk_test_IR0lZ3Ot5IQnsde6xuAmkHvB';
+var TEST_PK = 'pk_test_IR0lZ3Ot5IQnsde6xuAmkHvB';
+var LIVE_PK = 'pk_live_rsos9KggpkJEaMgJ4zkBvMeL';
 var tonicURL = "https://runkit.io/thor-stripe/stripe-sources-best-practice/branches/master/sources/";
 
 // Create SEPA source: https://stripe.com/docs/sepa-direct-debit
@@ -6,6 +7,8 @@ function initiateSepaDebit() {
   console.log("SEPA DEBIT");
   console.log($("#IBAN").val());
   // Initialize Stripe with your publishable key
+  var STRIPE_PK = (window.location.search.indexOf('live') != -1) ? LIVE_PK : TEST_PK;
+  console.log(STRIPE_PK);
   Stripe.setPublishableKey(STRIPE_PK);
   // Create bank account token: __
   Stripe.bankAccount.createToken({
@@ -60,13 +63,12 @@ function createSource(sourceType) {
     }
   }
   // Create redirect source
-  $.ajax({
-    url: tonicURL,
-    type: "POST",
-    contentType: "application/json; charset=utf-8",
-    data: JSON.stringify(sourceData[sourceType])
-  }).then(function(response){
-    console.log(response);
+  sourceData[sourceType].currency = 'eur';
+  sourceData[sourceType].redirect = {
+    return_url: window.location.origin
+  };
+  Stripe.source.create(sourceData[sourceType], function(status, response){
+    console.log(status,response);
     // Redirect if flow requires
     if (response.flow == 'redirect') {
       window.location.replace(response.redirect.url);
@@ -77,6 +79,24 @@ function createSource(sourceType) {
       setTimeout(checkChargeStatus, 1500, response);
     }
   });
+
+  // $.ajax({
+  //   url: tonicURL,
+  //   type: "POST",
+  //   contentType: "application/json; charset=utf-8",
+  //   data: JSON.stringify(sourceData[sourceType])
+  // }).then(function(response){
+  //   console.log(response);
+  //   // Redirect if flow requires
+  //   if (response.flow == 'redirect') {
+  //     window.location.replace(response.redirect.url);
+  //   } else if (response.status == 'chargeable') {
+  //     // This means the source was automatically charged on our webhook.
+  //     // For demo purposes the webhook handler is writing the charge status to the source metadata
+  //     // In your application you should write the charge status to your databse instead
+  //     setTimeout(checkChargeStatus, 1500, response);
+  //   }
+  // });
 }
 
 // Execute this when DOM is loaded
@@ -88,6 +108,8 @@ $(document).ready(function() {
     $("#" + anchor).collapse('show');
   }
 
+  var STRIPE_PK = (window.location.search.indexOf('live') != -1) ? LIVE_PK : TEST_PK;
+  console.log(STRIPE_PK);
   // Check if customer is returning from payment provider
   Stripe.setPublishableKey(STRIPE_PK);
   // TODO Enable Stripe elements
