@@ -108,7 +108,7 @@ $(document).ready(function() {
     $("#" + anchor).collapse('show');
   }
 
-  var STRIPE_PK = (window.location.search.indexOf('live') != -1) ? LIVE_PK : TEST_PK;
+  var STRIPE_PK = (window.location.search.indexOf('?live') != -1) ? LIVE_PK : TEST_PK;
   console.log(STRIPE_PK);
   // Check if customer is returning from payment provider
   Stripe.setPublishableKey(STRIPE_PK);
