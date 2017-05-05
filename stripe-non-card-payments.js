@@ -1,5 +1,7 @@
 var TEST_PK = 'pk_test_IR0lZ3Ot5IQnsde6xuAmkHvB';
 var LIVE_PK = 'pk_live_rsos9KggpkJEaMgJ4zkBvMeL';
+var KLARNA_TEST_PK = 'pk_test_a0BdO7vL5WSJLbEKI8r7T3pg';
+var KLARNA_LIVE_PK = 'pk_live_tcRYYRYFzgzVKMkTfmfMHzby';
 var tonicURL = "https://runkit.io/thor-stripe/stripe-sources-best-practice/branches/master/sources/";
 
 // Create SEPA source: https://stripe.com/docs/sepa-direct-debit
@@ -8,8 +10,8 @@ function initiateSepaDebit() {
   console.log($("#IBAN").val());
   // Initialize Stripe with your publishable key
   var STRIPE_PK = (window.location.search.indexOf('?live') != -1) ? LIVE_PK : TEST_PK;
-  console.log(STRIPE_PK);
   Stripe.setPublishableKey(STRIPE_PK);
+  console.log(Stripe.key);
   // Create bank account token: __
   Stripe.bankAccount.createToken({
     account_number: $("#IBAN").val(),
@@ -60,13 +62,63 @@ function createSource(sourceType) {
       type: "sepa_debit",
       amount: $("#amount").val(),
       token: arguments[1]
-    }
+    },
+    klarna: {
+      type: 'klarna',
+      amount: 816,
+      currency: 'usd', // currently only USD or GBP
+      klarna: {
+        first_name: 'Jenny',
+        last_name: 'Rosen',
+      },
+      owner: {
+        email: 'jenny.rosen@example.com',
+        address: {
+          line1: '1234 Main Street',
+          city: 'San Francisco',
+          postal_code: '94115',
+          country: 'US',
+          state: 'CA',
+        },
+        phone: '4152165700',
+      },
+      order: {
+        items: [{
+          type: 'sku',
+          description: 'Grey cotton T-shirt',
+          quantity: 2,
+          currency: 'usd',
+          amount: 796,
+       }, {
+          type: 'tax',
+          description: 'Taxes',
+          currency: 'usd',
+          amount: 20,
+       }, {
+          type: 'shipping',
+          description: 'Free Shipping',
+          currency: 'usd',
+          amount: 0,
+       }],
+        shipping: {
+          name: 'Jenny Rosen',
+          address: {
+            line1: '1234 Main Street',
+            city: 'San Francisco',
+            postal_code: '94115',
+            country: 'US',
+            state: 'CA',
+          },
+        },
+      },
+    },
   }
-  // Create redirect source
-  sourceData[sourceType].currency = 'eur';
+  // Create redirect source // Klarna only allows USD or GBP atm
+  sourceData[sourceType].currency = (sourceType === 'klarna') ? 'usd' : 'eur';
   sourceData[sourceType].redirect = {
     return_url: window.location.href
   };
+  // TODO refactor to return promise that resolves with a source instead of taking action
   Stripe.source.create(sourceData[sourceType], function(status, response){
     console.log(status,response);
     // Redirect if flow requires
@@ -77,6 +129,8 @@ function createSource(sourceType) {
       // For demo purposes the webhook handler is writing the charge status to the source metadata
       // In your application you should write the charge status to your databse instead
       setTimeout(checkChargeStatus, 1500, response);
+    } else if (response.type === 'klarna') {
+      initKlarna(response);
     }
   });
 
@@ -109,9 +163,9 @@ $(document).ready(function() {
   }
 
   var STRIPE_PK = (window.location.search.indexOf('?live') != -1) ? LIVE_PK : TEST_PK;
-  console.log(STRIPE_PK);
   // Check if customer is returning from payment provider
   Stripe.setPublishableKey(STRIPE_PK);
+  console.log(Stripe.key);
   // TODO Enable Stripe elements
   //var elements = stripe.elements();
   // Construct the Stripe Element:
@@ -230,4 +284,58 @@ function toggleResult() {
     $('.spinner').hide();
     $('.bg-success').show();
   }
+}
+
+// Testing Klarna
+window.klarnaAsyncCallback = function () {
+  console.log(Klarna);
+  $('#accordion').on('show.bs.collapse', function (e) {
+    if (e.target.id === 'collapseKlarna') {
+      // set Klarna keys
+      var STRIPE_PK = (window.location.search.indexOf('?live') != -1) ? KLARNA_LIVE_PK : KLARNA_TEST_PK;
+      Stripe.setPublishableKey(STRIPE_PK);
+      console.log(Stripe.key);
+      // Only init Klarna if it's not initialised
+      if (!Klarna.Credit.initialized) {
+        console.log('create Klarna source');
+        // create Klarna source
+        createSource('klarna');
+      }
+    } else {
+      var STRIPE_PK = (window.location.search.indexOf('?live') != -1) ? LIVE_PK : TEST_PK;
+      Stripe.setPublishableKey(STRIPE_PK);
+      console.log(Stripe.key);
+    }
+  });
+};
+
+function initKlarna(source) {
+  Klarna.Credit.init({
+    client_token: source.klarna.client_token,
+  });
+
+  Klarna.Credit.load({
+    container: '#klarna_container'
+  }, function(res) {
+    console.log(res);
+    toggleResult();
+  });
+}
+
+// TODO submit Klarna order
+function submitKlarnaOrder() {
+  toggleResult();
+  Klarna.Credit.authorize({}, function(res){
+    console.debug('Klarna.Credit.authorize', res);
+    if (res.approved) {
+      $("#result").html(
+        'Your order has been approved by Klarna, yay!'
+      );
+      toggleResult();
+      // TODO charge in webhook handler
+      // TODO poll for consumed status
+    } else {
+      // TODO Klarna error / unapproved message
+    }
+  });
 }
