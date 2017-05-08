@@ -7,9 +7,8 @@ function initiateSepaDebit() {
   console.log("SEPA DEBIT");
   console.log($("#IBAN").val());
   // Initialize Stripe with your publishable key
-  var STRIPE_PK = (window.location.search.indexOf('?live') != -1) ? LIVE_PK : TEST_PK;
-  console.log(STRIPE_PK);
-  Stripe.setPublishableKey(STRIPE_PK);
+  // Always use test key for SEPA
+  Stripe.setPublishableKey(TEST_PK);
   // Create bank account token: __
   Stripe.bankAccount.createToken({
     account_number: $("#IBAN").val(),
