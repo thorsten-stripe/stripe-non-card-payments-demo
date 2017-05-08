@@ -94,7 +94,7 @@
         <div class="panel panel-default">
           <div class="panel-heading" role="tab" id="headingSepa">
             <h4 class="panel-title">
-              <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseSepa" aria-expanded="true" aria-controls="collapseSepa">
+              <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseSepa" aria-expanded="false" aria-controls="collapseSepa">
                 <span class="pf pf-sepa"></span> Pay with IBAN Direct Debit
               </a>
             </h4>
@@ -148,8 +148,28 @@
               </div>
               <div class="form-group">
                 <div class="col-xs-12">
-                  <button type="submit" class="btn btn-default" onclick="initiateSofort(); return false">
+                  <button type="submit" class="btn btn-default" onclick="createSource('sofort'); return false">
                     Redirect to SOFORT
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-heading" role="tab" id="headingGiropay">
+            <h4 class="panel-title">
+              <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseGiropay" aria-expanded="false" aria-controls="collapseGiropay">
+                <span class="pf pf-giropay"></span> Pay with Giropay
+              </a>
+            </h4>
+          </div>
+          <div id="collapseGiropay" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingGiropay">
+            <div class="panel-body">
+              <div class="form-group">
+                <div class="col-xs-12">
+                  <button type="submit" class="btn btn-default" onclick="createSource('giropay'); return false">
+                    Redirect to Giropay
                   </button>
                 </div>
               </div>
@@ -168,7 +188,7 @@
             <div class="panel-body">
               <div class="form-group">
                 <div class="col-xs-12">
-                  <button type="submit" class="btn btn-default" onclick="initiateIdeal(); return false">
+                  <button type="submit" class="btn btn-default" onclick="createSource('ideal'); return false">
                     Redirect to iDEAL
                   </button>
                 </div>
@@ -188,8 +208,29 @@
             <div class="panel-body">
               <div class="form-group">
                 <div class="col-xs-12">
-                  <button type="submit" class="btn btn-default" onclick="initiateBancontact(); return false">
+                  <button type="submit" class="btn btn-default" onclick="createSource('bancontact'); return false">
                     Redirect to Bancontact
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-heading" role="tab" id="headingKlarna">
+            <h4 class="panel-title">
+              <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseKlarna" aria-expanded="false" aria-controls="collapseKlarna">
+                <span id="klarna-logo"></span> Pay with Klarna
+              </a>
+            </h4>
+          </div>
+          <div id="collapseKlarna" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingKlarna">
+            <div class="panel-body">
+              <div class="form-group">
+                <div class="col-xs-12">
+                  <div id="klarna_container"></div>
+                  <button type="submit" class="btn btn-default" onclick="submitKlarnaOrder(); return false">
+                    Submit Order
                   </button>
                 </div>
               </div>
@@ -207,6 +248,10 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   <!-- Stripe.js -->
   <script type="text/javascript" src="https://js.stripe.com/v2/"></script>
+  <!-- Stripe.js Beta Version to support Stripe Elements -->
+  <!-- <script type="text/javascript" src="https://js.stripe.com/v3/stripe-beta.js"></script> -->
+  <!-- Klarna JavaScript SDK -->
+  <script src="https://credit.klarnacdn.net/lib/v1/api.js" async></script>
   <!-- Local Code -->
   <script src="stripe-non-card-payments.js"></script>
 </body>
