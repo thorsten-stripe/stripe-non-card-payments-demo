@@ -58,3 +58,10 @@
       transform: scale(1.0);
     }
   }
+
+#klarna-logo {
+  display: inline-block;
+  width: 32px;
+  height: 16px;
+  background: url('https://cdn.klarna.com/1.0/shared/image/generic/logo/fi_fi/basic/black.png?width=32') no-repeat center;;
+}
