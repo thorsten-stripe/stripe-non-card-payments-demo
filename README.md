@@ -1,3 +1,3 @@
 # DEPRECATED
 
-moved to https://stripe-sources-demo.herokuapp.com/
+moved to https://stripe-payments-demo.appspot.com/
